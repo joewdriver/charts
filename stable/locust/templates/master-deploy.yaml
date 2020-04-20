@@ -12,9 +12,6 @@ spec:
   replicas: 1
   strategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: {{ default 1 .Values.master.maxSurge }}
-      maxUnavailable: {{ default 1 .Values.master.maxUnavailable }}
   template:
     metadata:
       labels:
@@ -33,17 +30,12 @@ spec:
         resources:
 {{ toYaml .Values.master.resources | indent 10 }}
         env:
-        {{- range $key, $value :=  .Values.master.config }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          value: {{ $value | quote }}
-        {{- end }}
         - name: LOCUST_MODE
-          value: "master"
-        - name: LOCUST_SCRIPT
-          value: {{ index .Values.worker.config "locust-script" | quote }}
-{{- if .Values.extraEnvs }}
-{{ toYaml .Values.extraEnvs | indent 8 }}
-{{- end }}
+          value: "standalone"
+        - name: LOCUSTFILE_PATH
+          value: "."
+        - name: TARGET_URL
+          value: "http://www.jobcase.com"
         ports:
         - containerPort: {{ .Values.service.internalPort }}
           name: loc-master-web
@@ -54,29 +46,16 @@ spec:
         - containerPort: 5558
           name: loc-master-p2
           protocol: TCP
-        volumeMounts:
-          - name: locust-tasks
-            mountPath: /locust-tasks/
-{{- if .Values.extraVolumeMounts }}
-{{ toYaml .Values.extraVolumeMounts | indent 10 }}
-{{- end }}
         livenessProbe:
           periodSeconds: 30
           httpGet:
-            path: /
+            path: .
             port: {{ .Values.service.internalPort }}
         readinessProbe:
           periodSeconds: 30
           httpGet:
-            path: /
+            path: .
             port: {{ .Values.service.internalPort }}
-      volumes:
-      - name: "locust-tasks"
-        configMap:
-          name: {{ template "locust.worker-configmap" . }}
-{{- if .Values.extraVolumes }}
-{{ toYaml .Values.extraVolumes | indent 6 }}
-{{- end }}
       restartPolicy: Always
 {{- with .Values.master.nodeSelector }}
       nodeSelector:

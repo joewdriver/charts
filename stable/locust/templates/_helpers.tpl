@@ -18,14 +18,3 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "locust.worker" -}}
 {{- printf "%s-%s" .Release.Name "worker" | trunc 63 -}}
 {{- end -}}
-
-{{/*
-Create fully qualified configmap name.
-*/}}
-{{- define "locust.worker-configmap" -}}
-{{ if .Values.worker.config.configmapName }}
-{{- printf .Values.worker.config.configmapName -}}
-{{ else }}
-{{- printf "%s-%s" .Release.Name "worker" -}}
-{{ end }}
-{{- end -}}
